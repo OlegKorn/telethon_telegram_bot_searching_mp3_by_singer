@@ -10,6 +10,7 @@ import random
 import logging
 
 
+# https://github.com/goq/telegram-list?tab=readme-ov-file
 APP_ID = 24436001
 APP_HASH = ''
 TOKEN = '7937555927:'
@@ -19,14 +20,27 @@ session_name = 'test'
 
 THIS_SCRIPT_DIR = 'G:/Desktop/py/TG'
 
+
 text = '''
 Python, Django, Vue.js, Docker, Kubernetes, linux, bash, FastAPI, all kinds of scripts.
 
 {I'M SEARCHING FOR A REMOTE JOB, PART-TIME PROJECT, ETC. | I'M LOOKING FOR A REMOTE JOB - OR A PROJECT.}
 
 {Hello | Good day | Hi there | Hi}, {my name is | I am | This is | It's} Sergey, {I specialize in developing and maintaining backend solutions using Python|develop frontend / backend in Python}, {experienced with backend frameworks and API integration | with comprehensive knowledge of security principles},{I’m | } a {motivated and skilled developer with problem-solving skills | skilled developer with problem-solving skills | experienced software developer with problem-solving skills | passionate and experienced developer with problem-solving skills | long-praticing software developer with problem-solving skills | Python developer with problem-solving skills | experienced Python developer | Python software developer} with {over 15 years of experience | 14+ years | more than 10 years | with more than 13 years of experience | commercial and open-source experience | huge commercial and open-source experience | good understanding of Python; as well as experienced | good knowledge of API and integrations, and huge experience} in {implementing services using open-source software and other resources | developing, optimizing, and maintaining web applications | Python, JS developing, maintaining web-applications | developing of web apps, SPA, Python, JS, administration}, {developing APIs | FastAPI | creating APIs | using FastAPI and creating APIs | developing APIs in FastAPI}. I {specialize | today usually specialize | have expertise | have experience | am experienced | work} in {backend development with Python | Python backend development | backend development | the development of backend in Python | Python and especially backend | Python3x development | Python and JS development} ({especially using FastAPI | I love FastAPI | especially in FastAPI | my preferable is FastAPI}) and {frontend development using Vue.js | frontend with Vue.js | Vue.js as frontend | Vue.js as frontend | frontend with Vue.js | Vue.js}. I {know linux, bash very well | bash and linux well | know bash / linux well | profoundly use linux / bash | am experienced with linux and bash | love linux and bash | use linux and bash on expert level | love and use bash and linux | know linux, bash | deeply knoow linux and bash}, as well as {database, network, websites managing | DB, networking ans webites administration | networking, DB and web administration | websites administration, networking tools and DBs | proficiency in access control models and network security} and {have broad experience with the needed tools | I am experienced with networking tools | have huge understanding of networking and protocols}, as well as {automation, DevOps, CI/CD, and containerization (Docker and Kubernetes) | demonstrated expertise with Kubernetes and Docker | DevOps, CI/CD, Docker/Kubernetes and proficient understanding of code versioning tools such as Git and Github | knowledge of CDNs (e.g. Cloudflare), DNS, certificates, and domain management}. 
+
 {These are the tools | Here are my developed tools | This are my pety-projects for daily use | These are my own tools} I developed {among others | as well as others | for daily use | for myself}: github: s3rgeym/massmail, s3rgeym/cpanel-api, s3rgeym/hh-applicant-tool.  
+
 This is {my general info | info about me in general | a short info about me | a short bio of mine | a little description of my experience | a little introduction | my little introduction | my short bio}. If {you are interested | it is interesting}, please {give me a feedback | write me back | give me an answer | answer me | write to me | drop me a line | send me a message | email me}. My email: gmail - kornilovoy'''
+
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    '--telegram_group_name',
+    type=str,
+    required=True,
+    help=('TG public group'),
+)
 
 
 def randomize(s: str) -> str:
@@ -73,20 +87,9 @@ def log(tg_channel_name):
         level=logging.INFO,
         format=FORMAT
     )
- 
-client = TelegramClient(session_name, APP_ID, APP_HASH)
-client.start()
+
 
 async def main():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        '--telegram_group_name',
-        type=str,
-        required=True,
-        help=('TG public group'),
-    )
-
     args = parser.parse_args()
 
     tg_group_url = f'https://t.me/{args.telegram_group_name}'
@@ -167,7 +170,12 @@ async def main():
             print(message.id, ' ----> ', e)
             continue
 
+
+client = TelegramClient(session_name, APP_ID, APP_HASH)
+client.start()
+
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
+
 
 # print(randomize(text))

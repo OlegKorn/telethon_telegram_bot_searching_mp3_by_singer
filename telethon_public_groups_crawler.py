@@ -3,104 +3,47 @@ from telethon import TelegramClient
 from telethon.tl import functions, types
 from time import sleep
 import os, re, sys
-from loguru import logger
+import argparse
+# from loguru import logging
 import string
 import random
+import logging
 
- 
-# https://github.com/goq/telegram-list?tab=readme-ov-file
+
 APP_ID = 24436001
 APP_HASH = ''
-TOKEN = ':'
+TOKEN = '7937555927:'
 PHONE = '+'
 
 session_name = 'test'
 
-tg_channel = 'jobs_abroad'
-tg_channel_url = f'https://t.me/{tg_channel}'
-
 THIS_SCRIPT_DIR = 'G:/Desktop/py/TG'
 
+text = '''
+Python, Django, Vue.js, Docker, Kubernetes, linux, bash, FastAPI, all kinds of scripts.
 
-email = ['https://t.me/avvocatoterrasini1', 'kornilovoy@gmail.com']
-    
-pet_projects = [
-    'https://github.com/s3rgeym/hh-applicant-tool',
-    'https://github.com/s3rgeym/cpanel-api',
-    'https://github.com/s3rgeym/massmail'
-]
+{I'M SEARCHING FOR A REMOTE JOB, PART-TIME PROJECT, ETC. | I'M LOOKING FOR A REMOTE JOB - OR A PROJECT.}
 
-#email
-message_part_1 = ''' 
-Note: my email credentials differ from my name, it's made on purpose
----------------------
-Hello, my name is Sergey, and I’m a skilled developer with over 15 years of experience in developing, optimizing, and maintaining web applications, APIs, and complex infrastructure solutions. I specialize in backend development with Python (especially using FastAPI) and frontend development using Vue.js. I know linux, bash very well, as well as database, network, websites managing and have broad experience with the needed tools. I have experience in system administration on Linux systems, project management, automation, DevOps, CI/CD, and containerization (Docker and Kubernetes). '''
-
-message_part_2 = '''
-I have my own security testing tools in Python, I'll show them on demand. These are my recently developed tools I use in daily life:'''
-
-message_part_3 = '''
-------------------------------------------
-MY COMMERCIAL AND PET-PROJECTS EXPERIENCE:
-------------------------------------------'''
-
-experience = [
-    '• As a freelancer, I develop(ed) and maintain(ed) VK bots, apps backend, student tasks, parsers, PHP backend, websites, backend, SPA, PHP / Python / JS legacy code',
-    '• Have my own security testing solutions and tools, conduct(ed) penetration / security tests of apps, websites, network devices, operating systems, databases, deliver(ed) detailed reports of their findings',
-    '• Developed end-to-end product',
-    '• Used data pipeline tools such as Kafka, Spark Streaming',
-    '• Used Postgres, MongoDB',
-    '• Developed with testing methodologies and tools',
-    '• Set up a Linux environment',
-    '• Created cloud deployment using Kubernetes and Docker',
-    '• Developed big data Python modules, automated operation tasks',
-    '• Communicated with stakeholders to find, architect and developed needed solutions, enhanced test automation',
-    '• Managed Azure infrastructure deployment and maintenance, built and optimized CI/CD pipelines, automated operational processes, analyzed data, collaborated with cross-functional teams',
-    '• Backend development of webb app (Python, Django)',
-    '• Built RESTful APIs in Python, with suitable unit, integration and end-to-end test coverage',
-    '• Improved the development environment',
-    '• Set up Docker configuration for local and testing environments',
-    '• Developed API with FastAPI',
-    '• Designed and implemented robust and scalable data pipelines using Snowflake, SQLAlchemy, and Python to extract, transform, and load (ETL) data from various sources'
-]
-
-end_message = '''
-Please give me a feedback.'''
+{Hello | Good day | Hi there | Hi}, {my name is | I am | This is | It's} Sergey, {I specialize in developing and maintaining backend solutions using Python|develop frontend / backend in Python}, {experienced with backend frameworks and API integration | with comprehensive knowledge of security principles},{I’m | } a {motivated and skilled developer with problem-solving skills | skilled developer with problem-solving skills | experienced software developer with problem-solving skills | passionate and experienced developer with problem-solving skills | long-praticing software developer with problem-solving skills | Python developer with problem-solving skills | experienced Python developer | Python software developer} with {over 15 years of experience | 14+ years | more than 10 years | with more than 13 years of experience | commercial and open-source experience | huge commercial and open-source experience | good understanding of Python; as well as experienced | good knowledge of API and integrations, and huge experience} in {implementing services using open-source software and other resources | developing, optimizing, and maintaining web applications | Python, JS developing, maintaining web-applications | developing of web apps, SPA, Python, JS, administration}, {developing APIs | FastAPI | creating APIs | using FastAPI and creating APIs | developing APIs in FastAPI}. I {specialize | today usually specialize | have expertise | have experience | am experienced | work} in {backend development with Python | Python backend development | backend development | the development of backend in Python | Python and especially backend | Python3x development | Python and JS development} ({especially using FastAPI | I love FastAPI | especially in FastAPI | my preferable is FastAPI}) and {frontend development using Vue.js | frontend with Vue.js | Vue.js as frontend | Vue.js as frontend | frontend with Vue.js | Vue.js}. I {know linux, bash very well | bash and linux well | know bash / linux well | profoundly use linux / bash | am experienced with linux and bash | love linux and bash | use linux and bash on expert level | love and use bash and linux | know linux, bash | deeply knoow linux and bash}, as well as {database, network, websites managing | DB, networking ans webites administration | networking, DB and web administration | websites administration, networking tools and DBs | proficiency in access control models and network security} and {have broad experience with the needed tools | I am experienced with networking tools | have huge understanding of networking and protocols}, as well as {automation, DevOps, CI/CD, and containerization (Docker and Kubernetes) | demonstrated expertise with Kubernetes and Docker | DevOps, CI/CD, Docker/Kubernetes and proficient understanding of code versioning tools such as Git and Github | knowledge of CDNs (e.g. Cloudflare), DNS, certificates, and domain management}. 
+{These are the tools | Here are my developed tools | This are my pety-projects for daily use | These are my own tools} I developed {among others | as well as others | for daily use | for myself}: github: s3rgeym/massmail, s3rgeym/cpanel-api, s3rgeym/hh-applicant-tool.  
+This is {my general info | info about me in general | a short info about me | a short bio of mine | a little description of my experience | a little introduction | my little introduction | my short bio}. If {you are interested | it is interesting}, please {give me a feedback | write me back | give me an answer | answer me | write to me | drop me a line | send me a message | email me}. My email: gmail - kornilovoy'''
 
 
-def create_and_log_message():
-    id_ = id_generator()
-    logger.info(id_)
-    logger.info('\n')
-    
-    randomize(email)
-    for i in email:
-        logger.info(i)
-
-    logger.info(message_part_1)
-    logger.info(message_part_2)
-    
-    randomize(pet_projects)
-    for i in pet_projects:
-        logger.info(i)
-
-    logger.info(message_part_3)
-    randomize(experience)
-    for i in experience:
-        logger.info(str(i))
-
-    logger.info(end_message)
-    logger.info('***END OF THE POST*** ***END OF THE POST*** ***END OF THE POST*** ***END OF THE POST*** ***END OF THE POST***')
-
-
-def randomize(lst):
-    random.shuffle(lst)
-    return lst
-
+def randomize(s: str) -> str:
+    while (
+        s1 := re.sub(
+            r"{([^{}]+)}",
+            lambda m: random.choice(
+                m.group(1).split(" | "),
+            ),
+            s,
+        )
+    ) != s:
+        s = s1
+    return s
 
 def id_generator(size=16, chars=string.ascii_lowercase + string.digits):
     return  '(Anti-spam id): ' + ''.join(random.choice(chars) for _ in range(size))
-
 
 def remove_emoji(string):
     emoji_pattern = re.compile("["
@@ -115,33 +58,59 @@ def remove_emoji(string):
     return emoji_pattern.sub(r'', string)
 
 
-def log():
-    logger.add(
-        f"{THIS_SCRIPT_DIR}/{tg_channel}_test.log", 
+def log(tg_channel_name):
+    '''
+    logging.add(
+        f"{THIS_SCRIPT_DIR}/{tg_channel}.log", 
         encoding="utf8",         
         format="{message}", 
         level="INFO"
     )
-
+    '''
+    FORMAT = '%(message)s'
+    logging.basicConfig(
+        filename=f'{THIS_SCRIPT_DIR}/{tg_channel_name}.log', 
+        level=logging.INFO,
+        format=FORMAT
+    )
+ 
 client = TelegramClient(session_name, APP_ID, APP_HASH)
 client.start()
 
 async def main():
-    log()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--telegram_group_name',
+        type=str,
+        required=True,
+        help=('TG public group'),
+    )
+
+    args = parser.parse_args()
+
+    tg_group_url = f'https://t.me/{args.telegram_group_name}'
+    log(args.telegram_group_name)
 
     sleep(1)
-    channel = await client.get_entity(tg_channel)
+    channel = await client.get_entity(args.telegram_group_name)
     sleep(1)
-    messages = await client.get_messages(tg_channel, limit=None)
+    messages = await client.get_messages(args.telegram_group_name, limit=None)
 
     for message in messages: 
+        await asyncio.sleep(0.2)
+        '''
         markers = [
             'Python', 'python', 'Django', 'vue.js', 
             'Vue.js', 'поддержка сайта', 'Flask', 
             'Python developer', 'Разработчик Python', 
             'maintaining infrastructure', 'configuring networks'
         ]
-        
+        '''
+        markers = [
+            'Python', 'python', 'Junior', 'Python developer'
+        ]
+                
         try:
             if any(marker in message.text for marker in markers):
                 cleared_message = str(remove_emoji(message.text))
@@ -163,23 +132,33 @@ async def main():
                     tg_nick_from_link = '@' + tg_nick_from_link.group()
                     print(message.id, tg_nick_from_link)
 
-                logger.info('--------------------------------------------------------')
+                logging.info('--------------------------------------------------------')
 
-                logger.info('CONTACTS:')
+                logging.info('CONTACTS:')
                 if email is not None:
-                    logger.info(email)
+                    logging.info(email)
                 if tg_nick is not None:
-                    logger.info(tg_nick)
+                    logging.info(tg_nick)
                 if tg_nick_from_link is not None:
-                    logger.info(tg_nick_from_link)
+                    logging.info(tg_nick_from_link)
                 
-                logger.info(message.id)
-                logger.info(tg_channel_url)
-                logger.info(cleared_message)
-                logger.info('--------------------------------------------------------\n\n')
+                logging.info(message.id)
+                logging.info(tg_group_url)
+                logging.info(cleared_message)
+                logging.info('--------------------------------------------------------\n')
 
-                create_and_log_message()
-                logger.info('******************************************************\n\n\n\n\n')
+                my_message = randomize(text)
+                
+                logging.info('CONTACTS:')
+                if email is not None:
+                    logging.info(email)
+                if tg_nick is not None:
+                    logging.info(tg_nick)
+                if tg_nick_from_link is not None:
+                    logging.info(tg_nick_from_link)
+
+                logging.info(my_message)
+                logging.info('******************************************************\n\n\n')
 
             if not any(marker in message.text for marker in markers):
                 print(message.id, ' ----> no markers')
@@ -188,33 +167,7 @@ async def main():
             print(message.id, ' ----> ', e)
             continue
 
-
-sleep(1)
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
 
-
-'''
-email_re = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]+'
-s = 'Жду ваше резюме и вопросы на recruit@ibitcy.com или же в телеграм @leksdmiv. https://t.me/23242rwsdfs'
-s1 = 'м @leksdmiv. h   recruit@ibitcy.com  https://t.me/ererwer3dfdfs sdfsd' 
-
-try:
-    email = re.search(email_re, s1)
-    if email:
-        email = email.group()
-        print(email)
-        
-    tg_nick = re.search(r'(?<=@)[a-zA-Z]*', s1)
-    if tg_nick:
-        tg_nick = '@' + tg_nick.group()
-        print(tg_nick)
-                    
-    tg_nick_from_link = re.search(r'(https://t.me/).*', s1)
-    if tg_nick_from_link:
-        tg_nick_from_link = '@' + tg_nick_from_link.group()
-        print(tg_nick_from_link)
-
-except AttributeError as e:
-    print(e)
-'''
+# print(randomize(text))

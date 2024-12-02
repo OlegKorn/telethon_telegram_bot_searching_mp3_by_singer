@@ -7,15 +7,15 @@ YELLOW = 'yellow'
 LIGHT_GREEN = 'light_green'
 
 # https://github.com/goq/telegram-list?tab=readme-ov-file
-API_ID = 24436001
-API_HASH = 'd607a45e782bec49fd1f41b2272ca70a'
+API_ID = 
+API_HASH = ''
 
-PrincessElsaAIBot_BOT_TOKEN = '8156286949:AAFlG6uSEiIx0SGYvLsgbzz8DWxgUUHjUQE'
-PHONE = '+79501103887'
+PrincessElsaAIBot_BOT_TOKEN = ':'
+PHONE = '+'
 
-BOT_NAME = 'PrincessElsaAIBot'
-BOT_USERNAME = 'PrincessElsaAIbot'
+BOT_NAME = ''
+BOT_USERNAME = ''
 
-SESSION_NAME = 'PrincessElsaAIBot'
+SESSION_NAME = ''
 
 THIS_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)).replace('\\', '/')

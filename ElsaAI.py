@@ -1,104 +1,86 @@
 from telethon import TelegramClient, events
 from telethon.tl.custom import Button
+from telethon.errors.rpcerrorlist import FloodWaitError
 
 import logger
-from logger import CMDColorLogger, log_message_colorized
+from logger import CMDColorLogger, cmd_message_colorized
 
 import asyncio
 import os, re, sys
 import config 
 
+import muzfondsaver
+from muzfondsaver import MuzofondMusicSaver
+
 
 def main():
-    bot_client = TelegramClient(
-        config.SESSION_NAME, 
-        config.API_ID, 
-        config.API_HASH
-    )
-    bot_client.start(bot_token=config.PrincessElsaAIBot_BOT_TOKEN)
-
     try:
-        async def get_event_chat(e):
-            chat = await e.get_chat()
-            
-            return chat
-
+        bot_client = TelegramClient(
+            # config.SESSION_NAME,
+            None, 
+            config.API_ID, 
+            config.API_HASH
+        )
+        bot_client.start(bot_token=config.PrincessElsaAIBot_BOT_TOKEN)
+    
         # Handler for the /start command
         @bot_client.on(events.NewMessage(pattern='/start'))
         async def respond_start(event):
-            '''
-            me =
-                id=8156286949,
-                is_self=True,
-                contact=False,
-                mutual_contact=False,
-                deleted=False,
-                bot=True,
-                bot_chat_history=False,
-                bot_nochats=False,
-                verified=False,
-                restricted=False,
-                min=False,
-                bot_inline_geo=False,
-                support=False,
-                scam=False,
-                apply_min_photo=True,
-                fake=False,
-                bot_attach_menu=False,
-                premium=False,
-                attach_menu_enabled=False,
-                bot_can_edit=True,
-                close_friend=False,
-                stories_hidden=False,
-                stories_unavailable=True,
-                contact_require_premium=False,
-                bot_business=False,
-                bot_has_main_app=False,
-                access_hash=948385373127645805,
-                first_name='PrincessElsaAIBot',
-                last_name=None,
-                username='PrincessElsaAIbot',
-                phone=None,
-                photo=None,
-                status=None,
-                bot_info_version=1,
-                restriction_reason=[
-            ],
-                bot_inline_placeholder=None,
-                lang_code=None,
-                emoji_status=None,
-                usernames=[],
-                stories_max_id=None,
-                color=None,
-                profile_color=None,
-                bot_active_users=None
-            '''
-            me = await bot_client.get_me()
             await event.respond(
-                f'Hello, {me.first_name}! I am a Telethon bot. How can I assist you today?', 
-                buttons=[
-                    Button.inline('respond_start!'), 
-                    Button.inline('respond_start')
+                'Hello!\nThis bot will send you a chosen song' \
+                '(mp3 file) from a list of musician songs' \
+                'on muzofond.fm', 
+                buttons=[ 
+                    Button.inline('Choose a music artist name...')
                 ]
             )
+        '''
+        @bot_client.on(events.CallbackQuery(data=b'Choose a music artist name...'))
+        async def handler(event):
+            await event.respond(f'Input a name of musician. After that the bot will send the list of tracks of the chosen musician...' )
 
-        @bot_client.on(events.NewMessage(pattern='/new'))
-        async def respond_new(event):
-            me = await bot_client.get_me()
-            
-            await event.respond(
-                f'Hey, {me.first_name}!', 
-                buttons=[
-                    Button.inline('respond_new'),
-                    Button.inline('respond_new')
-                ]
-            )
+        # ------------------------------------------------------------------------------------------------------
+        @bot_client.on(events.NewMessage(incoming=True))
+        async def handler(event):
+            event.text = event.text.strip()
 
-    except Exception as ex:
-        print(ex)
+            # not /start
+            if ('/' not in event.text) and ('start' not in event.text):
+                if not any(x.isalpha() for x in event.text):
+                    await event.respond('Your musician\'s name didn\'t have any letters! Is it a joke? Try again with a real name...')
+
+                else:
+                    cmd_message_colorized(CMDColorLogger(), f'You chose: {event.text}', config.YELLOW)
+                    
+                    await event.respond(f'You choose: {event.text}')
+                    await event.respond(f'Being processed...')
+
+                    mfs = MuzofondMusicSaver(event.text)
+                    songs = mfs.get_mp3s_of_author_found_songs()
+                    
+                    for song in songs:
+                        mp3_title = song.split(":::")[1]
+                        mp3_link = song.split(":::")[0]
+                        print(mp3_link)
+
+                        await event.respond(
+                            f'{mp3_link} - {mp3_title}',
+                            buttons=[
+                                Button.inline(
+                                    'Download', 
+                                    data='mp3_link'
+                                )
+                            ]
+                        )
+
+        '''
+        with bot_client:
+            bot_client.run_until_disconnected()
+
+    except FloodWaitError as ex:
+        #print('Wait 3600 seconds')
+        cmd_message_colorized(CMDColorLogger(), f'Exception:\n{ex}', config.RED)
     
-    with bot_client:
-        bot_client.run_until_disconnected()
 
 if __name__ == '__main__':
     main()

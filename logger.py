@@ -26,37 +26,5 @@ class CMDColorLogger(object):
         '''Prints out in cmd colorized'''
         print(colored(message, color, attrs=['bold']))
 
-    def print_test(self, message):
-        print(message)
-
 def cmd_message_colorized(logger, message, color):
     logger.log(message, color)
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '--gn',
-    type=str, 
-    help='tg group name'
-)
-parser.add_argument(
-    '--u',
-    type=str, 
-    help='tg user',
-    default='r3pt1101d'
-)
-parser.add_argument(
-    '--msg',
-    type=str, 
-    help='tg message to --tgu'
-)
-parser.add_argument(
-    '--img',
-    type=pathlib.Path,
-    help='path to a file'
-)
-
-args = parser.parse_args()
-
-if args.u is None:
-    parser.print_help()

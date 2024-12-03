@@ -26,7 +26,10 @@ class CMDColorLogger(object):
         '''Prints out in cmd colorized'''
         print(colored(message, color, attrs=['bold']))
 
-def log_message_colorized(logger, message, color):
+    def print_test(self, message):
+        print(message)
+
+def cmd_message_colorized(logger, message, color):
     logger.log(message, color)
 
 

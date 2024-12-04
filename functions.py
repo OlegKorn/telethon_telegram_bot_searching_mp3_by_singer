@@ -6,16 +6,20 @@ import config
 import mutagen
 from fake_headers import Headers
 import wget
+import re 
+from string import punctuation
 
 
 def get_user_os():
     return platform.system().lower()
 
 
-def delete_forbidden_chars(string, out_string):
+def delete_forbidden_chars(string):
     # deleting forbidden chars
-    FORBIDDEN_CHARS = re.escape(punctuation=punctuation)
-    out_string = re.sub('['+FORBIDDEN_CHARS+']', '', string).replace('"', "")
+    FORBIDDEN_CHARS = re.escape(punctuation)
+    cleared_string = re.sub('['+FORBIDDEN_CHARS+']', '', string).replace('"', "")
+    
+    return cleared_string
 
 
 def clear_mp3_metadata(filepath):
@@ -58,4 +62,3 @@ def download_file(url, filename, marker=False):
             f'Clearing metadata:\n {ex}',
             config.RED
         )
-        

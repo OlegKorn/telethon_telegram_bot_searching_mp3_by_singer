@@ -59,9 +59,3 @@ def download_file(url, filename, marker=False):
             config.RED
         )
         
-
-
-url = 'https://dl3s2.muzofond.fm/aHR0cDovL2YubXAzcG9pc2submV0L21wMy8wMDMvMjM5LzA2MC8zMjM5MDYwLm1wMw=='
-
-if __name__ == '__main__':
-     clear_mp3_metadata(f'{config.THIS_SCRIPT_DIR}/sent_songs/Holly Dunn - Heart Full Of Love.mp3')

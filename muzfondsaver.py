@@ -9,15 +9,13 @@ from logger import CMDColorLogger, cmd_message_colorized
 
 import mutagen
 
-from string import punctuation
-
 from config import THIS_SCRIPT_DIR
 
 import functions
 
-# это URL, с найденным автором и его песнями, ее придется менять вручную для каждого поиска
-# вот так она выглядит в браузере: https://muzofond.fm/search/alison krauss cox family
-SEARCH_BASE_URL = 'https://muzofond.fm/collections/artists/'
+
+SEARCH_BASE_URL = 'https://muzofond.fm/search/'
+
 
 class MuzofondMusicSaver(object):
     '''singleton, i.e. only 1 instance can be created'''
@@ -65,15 +63,17 @@ class MuzofondMusicSaver(object):
 
         try:
             page_items = self.s.find('ul', class_='mainSongs unstyled songs').find_all('li', class_='item')
-        except:
+        except (TypeError, AttributeError) as ex:
+            print(ex)
             page_items = self.s.find('ul', class_='mainSongs unstyled songsListen songs').find_all('li', class_='item')
 
         try:
             for item in page_items:
                 mp3_link = item.find("li", class_="play").get("data-url")
                 mp3_title = item.find("span", class_="track").text.strip()
+                mp3_title_cleared = functions.delete_forbidden_chars(mp3_title)
 
-                track_data = mp3_link + ":::" + mp3_title
+                track_data = mp3_link + ":::" + mp3_title_cleared
                 mp3s_of_author.append(track_data)
 
             return mp3s_of_author

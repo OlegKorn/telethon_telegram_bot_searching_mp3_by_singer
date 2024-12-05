@@ -57,14 +57,16 @@ def main():
             @bot_client.on(events.NewMessage(incoming=True))
             async def handle_any_senseless_message(event):
                 try:
+                    msg_ids.append(event.id)
+
                     if (event.text != '/start') and (event.text != '/delete'):
                         user = await event.get_sender()
                         msg = await event.respond(
                             f'Hello, ☘️ {user.first_name} ☘️! Please [/start](/start)'
-                        )
+                        )                       
                         msg_ids.append(msg.id)
                         
-                        cmd_message_colorized(CMDColorLogger(), str(msg), config.YELLOW)
+                        cmd_message_colorized(CMDColorLogger(), str(event.text), config.YELLOW)
                     # del msg_ids
                 
                 except Exception as ex:

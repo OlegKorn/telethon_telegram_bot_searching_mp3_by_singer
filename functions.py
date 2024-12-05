@@ -9,6 +9,11 @@ import wget
 import re 
 from string import punctuation
 
+import time
+import functools
+import typing
+
+
 
 def get_user_os():
     return platform.system().lower()
@@ -43,6 +48,20 @@ def clear_mp3_metadata(filepath):
         )
 
 
+def timeit(fn: typing.Callable) -> typing.Callable:
+    @functools.wraps(fn)
+    def timed(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        try:
+            dt = -time.monotonic()
+            return fn(*args, **kwargs)
+        finally:
+            dt += time.monotonic()
+            print("function %s tooks %.3fs", fn.__name__, dt)
+
+    return timed
+
+
+@timeit
 def download_file(url, filename, marker=False):
     try:
         wget.download(url, filename)
@@ -62,3 +81,18 @@ def download_file(url, filename, marker=False):
             f'Clearing metadata:\n {ex}',
             config.RED
         )
+
+
+def delete_forbidden_chars(string):
+    # deleting forbidden chars
+    FORBIDDEN_CHARS = re.escape(punctuation)
+    cleared_string = re.sub('['+FORBIDDEN_CHARS+']', '', string).replace('"', "")
+    
+    return cleared_string
+
+
+def append_msg_id(lst, id):
+    lst.append(id)
+
+def clear_msg_ids(lst):
+    lst = []

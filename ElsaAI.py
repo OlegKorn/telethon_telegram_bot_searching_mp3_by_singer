@@ -18,7 +18,7 @@ import functions
 
 
 is_downloaded = False
-
+msg_ids = []
 
 
 def start_bot(start=True):
@@ -32,42 +32,32 @@ def start_bot(start=True):
 
     return client
 
-def main():
-    msg_ids = []
 
+
+def main():
     try:
         # if not session created
         if not (f'{config.SESSION_NAME}.session' in os.listdir(f'{config.THIS_SCRIPT_DIR}')):
-            cmd_message_colorized(
-                CMDColorLogger(), 
-                f'No {config.SESSION_NAME}.session in {os.listdir({config.THIS_SCRIPT_DIR})}. Session created...',
-                config.RED
-            )
+            cmd_message_colorized(CMDColorLogger(), 'Session created...', config.RED)
             bot_client = start_bot()
-
             cmd_message_colorized(CMDColorLogger(), f'Bot started', config.RED)
         
-
         if (f'{config.SESSION_NAME}.session' in os.listdir(f'{config.THIS_SCRIPT_DIR}')):
             cmd_message_colorized(CMDColorLogger(), f'Bot started', config.YELLOW)
-            
             bot_client = start_bot(start=False)
             
 
             @bot_client.on(events.NewMessage(incoming=True))
             async def handle_any_senseless_message(event):
                 try:
-                    msg_ids.append(event.id)
+                    functions.append_msg_id(msg_ids, event.id)
 
                     if (event.text != '/start') and (event.text != '/delete'):
                         user = await event.get_sender()
                         msg = await event.respond(
                             f'Hello, ☘️ {user.first_name} ☘️! Please [/start](/start)'
                         )                       
-                        msg_ids.append(msg.id)
-                        
-                        cmd_message_colorized(CMDColorLogger(), str(event.text), config.YELLOW)
-                    # del msg_ids
+                        functions.append_msg_id(msg_ids, msg.id)
                 
                 except Exception as ex:
                     cmd_message_colorized(CMDColorLogger(), f'Exception: handle_any_senseless_message: {ex}',config.RED)
@@ -75,18 +65,19 @@ def main():
 
             @bot_client.on(events.NewMessage(pattern='/delete'))
             async def delete_dialog(event):
-                msg_ids.append(event.id)
+                functions.append_msg_id(msg_ids, event.id)
 
                 cmd_message_colorized(CMDColorLogger(), msg_ids, config.YELLOW)
                 msg = await bot_client.delete_messages(event.chat_id, msg_ids)
                 cmd_message_colorized(CMDColorLogger(), str(msg), config.YELLOW)
-                # del msg_ids
+                
+                functions.clear_msg_ids(msg_ids)
 
 
             @bot_client.on(events.NewMessage(pattern='/start'))
             async def respond_start(event):
                 try:
-                    msg_ids.append(event.id)
+                    functions.append_msg_id(msg_ids, event.id)
 
                     user = await event.get_sender()
                     msg = await event.respond(
@@ -97,7 +88,7 @@ def main():
                             Button.inline('Click and send a music artist name...')
                         ]
                     )
-                    msg_ids.append(msg.id)
+                    functions.append_msg_id(msg_ids, msg.id)
                 
                 except Exception as ex:
                     cmd_message_colorized(CMDColorLogger(), f'Exception: respond_start: {ex}',config.RED)
@@ -106,17 +97,22 @@ def main():
             @bot_client.on(events.CallbackQuery(data=b'Click and send a music artist name...'))
             async def handler_click(event):
                 msg = await event.respond(f'Type the name of a musician. After that the bot will send the list of tracks of the chosen musician...' )
-                msg_ids.append(msg.id)
+                functions.append_msg_id(msg_ids, msg.id)
 
                 @bot_client.on(events.NewMessage(incoming=True))                 
                 async def handler_chose_name(event):
+                    if event.text == '/delete':
+                        functions.append_msg_id(msg_ids, event.id)
+                        await bot_client.delete_messages(event.chat_id, msg_ids)
+                        clear_msg_ids()
+
                     if event.text != '/start': 
                         event.text = event.text.strip()
                         artist = str(event.text).title()
 
                         if not any(x.isalpha() for x in artist):
                             msg = await event.respond('Your musician\'s name didn\'t have any letters! Is it a joke? Try again with a real name...')
-                            msg_ids.append(msg.id)
+                            functions.append_msg_id(msg_ids, msg.id)
 
                         else:
                             cmd_message_colorized(CMDColorLogger(), f'You chose {artist}', config.YELLOW)
@@ -137,14 +133,14 @@ def main():
                                         )
                                     ]
                                 )
-                                msg_ids.append(msg.id)
+                                functions.append_msg_id(msg_ids, msg.id)
 
                             return
 
 
             @bot_client.on(events.CallbackQuery(data=b'mp3'))
             async def handler_download(event):
-                msg_ids.append(event.id)
+                functions.append_msg_id(msg_ids, event.id)
 
                 msg = await event.get_message()
                 chat = await event.get_input_chat() # bot chat
@@ -175,27 +171,27 @@ def main():
                             # SENDING THE CHOSEN FILE CLEARD FROM METADATA
                             # TO THE USER
                             msg = await event.respond(f'{user.first_name}, please wait a little... It\'s being processed 🕐')
-                            msg_ids.append(msg.id)
+                            functions.append_msg_id(msg_ids, msg.id)
                             await asyncio.sleep(4)
                             
                             msg = await event.respond(f'{user.first_name}, Still being processed... 🕑')
-                            msg_ids.append(msg.id)
+                            functions.append_msg_id(msg_ids, msg.id)
                             await asyncio.sleep(4)
                             
                             msg = await event.respond(f'{user.first_name}, Don\'t panic, if you see this message - it\'s still being processed... 🕒')
-                            msg_ids.append(msg.id)
+                            functions.append_msg_id(msg_ids, msg.id)
                             await asyncio.sleep(4)
                             
                             msg = await event.respond(f'{user.first_name}, Just 10-15 seconds... It\'s being processed 🕓')
-                            msg_ids.append(msg.id)
+                            functions.append_msg_id(msg_ids, msg.id)
                             await asyncio.sleep(4)
                             
                             msg = await event.respond(f'{user.first_name}, A little patience... It\'s STILL being processed 🕔')
-                            msg_ids.append(msg.id)
+                            functions.append_msg_id(msg_ids, msg.id)
                             await asyncio.sleep(4)
                             
                             msg = await event.respond(f'{user.first_name}, Yes! It\'s STILL being processed 🕕')
-                            msg_ids.append(msg.id)
+                            functions.append_msg_id(msg_ids, msg.id)
 
                             # sending file
                             file = await bot_client.upload_file(f'{config.THIS_SCRIPT_DIR}/sent_songs/{filename}.mp3')
@@ -206,7 +202,7 @@ def main():
                                 chat, 
                                 f'🐥 Hey, {user.first_name}!\nHere\'s your song: {filename}'
                             )
-                            msg_ids.append(msg.id)
+                            functions.append_msg_id(msg_ids, msg.id)
 
                             cmd_message_colorized(
                                 CMDColorLogger(), 

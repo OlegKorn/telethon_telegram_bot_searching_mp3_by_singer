@@ -1,5 +1,7 @@
 from telethon import TelegramClient, events
+
 from telethon.tl.custom import Button
+
 from telethon.errors.rpcerrorlist import FloodWaitError
 
 import logger
@@ -17,6 +19,8 @@ import functions
 
 is_downloaded = False
 
+
+
 def start_bot(start=True):
     client = TelegramClient(
         config.SESSION_NAME, 
@@ -29,6 +33,8 @@ def start_bot(start=True):
     return client
 
 def main():
+    msg_ids = []
+
     try:
         # if not session created
         if not (f'{config.SESSION_NAME}.session' in os.listdir(f'{config.THIS_SCRIPT_DIR}')):
@@ -41,81 +47,103 @@ def main():
 
             cmd_message_colorized(CMDColorLogger(), f'Bot started', config.RED)
         
-        # if there is a session file,
-        # according to https://docs.telethon.dev/en/stable/modules/client.html#telethon.client.auth.AuthMethods.sign_in
-        # "The session file contains enough information for you to login without re-sending the code"
+
         if (f'{config.SESSION_NAME}.session' in os.listdir(f'{config.THIS_SCRIPT_DIR}')):
             cmd_message_colorized(CMDColorLogger(), f'Bot started', config.YELLOW)
+            
             bot_client = start_bot(start=False)
+            
 
-            @bot_client.on(events.NewMessage(
-                                            incoming=True,
-                                            outgoing=True,
-                                            pattern='/delete'
-                )
-            )
+            @bot_client.on(events.NewMessage(incoming=True))
+            async def handle_any_senseless_message(event):
+                try:
+                    if (event.text != '/start') and (event.text != '/delete'):
+                        user = await event.get_sender()
+                        msg = await event.respond(
+                            f'Hello, ☘️ {user.first_name} ☘️! Please [/start](/start)'
+                        )
+                        msg_ids.append(msg.id)
+                        
+                        cmd_message_colorized(CMDColorLogger(), str(msg), config.YELLOW)
+                    # del msg_ids
+                
+                except Exception as ex:
+                    cmd_message_colorized(CMDColorLogger(), f'Exception: handle_any_senseless_message: {ex}',config.RED)
+
+
+            @bot_client.on(events.NewMessage(pattern='/delete'))
             async def delete_dialog(event):
-                # await bot_client.delete_messages(event.chat_id, event.id)
-                chat = await event.get_input_chat() # bot chat
-                msg = await event.get_message()
-                await bot_client.delete_messages(event.input_chat, msg.id)
-    
+                msg_ids.append(event.id)
 
-            # Handler for the /start command
+                cmd_message_colorized(CMDColorLogger(), msg_ids, config.YELLOW)
+                msg = await bot_client.delete_messages(event.chat_id, msg_ids)
+                cmd_message_colorized(CMDColorLogger(), str(msg), config.YELLOW)
+                # del msg_ids
+
+
             @bot_client.on(events.NewMessage(pattern='/start'))
             async def respond_start(event):
-                user = await event.get_sender()
+                try:
+                    msg_ids.append(event.id)
+
+                    user = await event.get_sender()
+                    msg = await event.respond(
+                        f'Hello, ☘️ {user.first_name} ☘️!\nThis bot will send 🎁 you a chosen song ' \
+                        '(mp3 file) from a songs list of an artist you chose ' \
+                        '🔊 (from muzofond.fm)', 
+                        buttons=[ 
+                            Button.inline('Click and send a music artist name...')
+                        ]
+                    )
+                    msg_ids.append(msg.id)
                 
-                await event.respond(
-                    f'Hello, ☘️ {user.first_name} ☘️!\nThis bot will send 🎁 you a chosen song ' \
-                    '(mp3 file) from a songs list of an artist you chose ' \
-                    '🔊 (from muzofond.fm)', 
-                    buttons=[ 
-                        Button.inline('Click and send a music artist name...')
-                    ]
-                )
-            
+                except Exception as ex:
+                    cmd_message_colorized(CMDColorLogger(), f'Exception: respond_start: {ex}',config.RED)
+
+
             @bot_client.on(events.CallbackQuery(data=b'Click and send a music artist name...'))
-            async def handler(event):
-                await event.respond(f'Type the name of a musician. After that the bot will send the list of tracks of the chosen musician...' )
+            async def handler_click(event):
+                msg = await event.respond(f'Type the name of a musician. After that the bot will send the list of tracks of the chosen musician...' )
+                msg_ids.append(msg.id)
 
-            # ------------------------------------------------------------------------------------------------------
-            @bot_client.on(events.NewMessage(incoming=True))
-            async def handler(event):
-                event.text = event.text.strip()
+                @bot_client.on(events.NewMessage(incoming=True))                 
+                async def handler_chose_name(event):
+                    if event.text != '/start': 
+                        event.text = event.text.strip()
+                        artist = str(event.text).title()
 
-                # not /start
-                if ('/' not in event.text) and ('start' not in event.text):
-                    artist = str(event.text).title()
+                        if not any(x.isalpha() for x in artist):
+                            msg = await event.respond('Your musician\'s name didn\'t have any letters! Is it a joke? Try again with a real name...')
+                            msg_ids.append(msg.id)
 
-                    if not any(x.isalpha() for x in artist):
-                        await event.respond('Your musician\'s name didn\'t have any letters! Is it a joke? Try again with a real name...')
+                        else:
+                            cmd_message_colorized(CMDColorLogger(), f'You chose {artist}', config.YELLOW)
+                                
+                            mfs = MuzofondMusicSaver(artist)
+                            songs = mfs.get_mp3s_of_author_found_songs()
+                                
+                            for song in songs:
+                                mp3_title = song.split(":::")[1]
+                                mp3_link = song.split(":::")[0]
 
-                    else:
-                        cmd_message_colorized(CMDColorLogger(), f'You chose {artist}', config.YELLOW)
-                        
-                        mfs = MuzofondMusicSaver(artist)
-                        songs = mfs.get_mp3s_of_author_found_songs()
-                        
-                        for song in songs:
-                            mp3_title = song.split(":::")[1]
-                            mp3_link = song.split(":::")[0]
+                                msg = await event.respond(
+                                    f'{artist}, [link]({mp3_link}); len of ids: {len(msg_ids)}',
+                                    buttons=[
+                                        Button.inline(
+                                            f'🏆 {artist}: {mp3_title} 🐈',
+                                            data=b'mp3'
+                                        )
+                                    ]
+                                )
+                                msg_ids.append(msg.id)
 
-                            await event.respond(
-                                f'{artist}, [link]({mp3_link})',
-                                buttons=[
-                                    Button.inline(
-                                        # https://docs.telethon.dev/en/stable/modules/custom.html#telethon.tl.custom.button.Button.inline
-                                        # static inline(text, data=None)
-                                        # If data is omitted, the given text will be used as data
-                                        f'🏆 {artist}: {mp3_title} 🐈',
-                                        data=b'mp3'
-                                    )
-                                ]
-                            )
+                            return
+
 
             @bot_client.on(events.CallbackQuery(data=b'mp3'))
-            async def handler(event):
+            async def handler_download(event):
+                msg_ids.append(event.id)
+
                 msg = await event.get_message()
                 chat = await event.get_input_chat() # bot chat
                 user = await event.get_sender()
@@ -128,7 +156,9 @@ def main():
                     # download a song 
                     try:
                         filename = f'{artist} - {song_title}'
-                        await event.respond(f'👺 {user.first_name}, 🐥 please wait a little... 🌈\n {filename} is being downloaded ⚙️ ...')
+                        
+                        msg = await event.respond(f'👺 {user.first_name}, 🐥 please wait a little... 🌈\n {filename} is being downloaded ⚙️ ...')
+                        msg_ids.append(msg.id)
 
                         cmd_message_colorized(CMDColorLogger(), f'⚙️ Trying to download: {filename}.mp3...', config.LIGHT_GREEN)
                         
@@ -142,27 +172,39 @@ def main():
                             
                             # SENDING THE CHOSEN FILE CLEARD FROM METADATA
                             # TO THE USER
-                            await event.respond(f'{user.first_name}, please wait a little... It\'s being processed 🕐')
+                            msg = await event.respond(f'{user.first_name}, please wait a little... It\'s being processed 🕐')
+                            msg_ids.append(msg.id)
                             await asyncio.sleep(4)
-                            await event.respond(f'{user.first_name}, Still being processed... 🕑')
+                            
+                            msg = await event.respond(f'{user.first_name}, Still being processed... 🕑')
+                            msg_ids.append(msg.id)
                             await asyncio.sleep(4)
-                            await event.respond(f'{user.first_name}, Don\'t panic, if you see this message - it\'s still being processed... 🕒')
+                            
+                            msg = await event.respond(f'{user.first_name}, Don\'t panic, if you see this message - it\'s still being processed... 🕒')
+                            msg_ids.append(msg.id)
                             await asyncio.sleep(4)
-                            await event.respond(f'{user.first_name}, Just 10-15 seconds... It\'s being processed 🕓')
+                            
+                            msg = await event.respond(f'{user.first_name}, Just 10-15 seconds... It\'s being processed 🕓')
+                            msg_ids.append(msg.id)
                             await asyncio.sleep(4)
-                            await event.respond(f'{user.first_name}, A little patience... It\'s STILL being processed 🕔')
+                            
+                            msg = await event.respond(f'{user.first_name}, A little patience... It\'s STILL being processed 🕔')
+                            msg_ids.append(msg.id)
                             await asyncio.sleep(4)
-                            await event.respond(f'{user.first_name}, Yes! It\'s STILL being processed 🕕')
+                            
+                            msg = await event.respond(f'{user.first_name}, Yes! It\'s STILL being processed 🕕')
+                            msg_ids.append(msg.id)
 
                             # sending file
                             file = await bot_client.upload_file(f'{config.THIS_SCRIPT_DIR}/sent_songs/{filename}.mp3')
                             
                             await bot_client.send_file(chat, file)
 
-                            await bot_client.send_message(
+                            msg = await bot_client.send_message(
                                 chat, 
                                 f'🐥 Hey, {user.first_name}!\nHere\'s your song: {filename}'
                             )
+                            msg_ids.append(msg.id)
 
                             cmd_message_colorized(
                                 CMDColorLogger(), 

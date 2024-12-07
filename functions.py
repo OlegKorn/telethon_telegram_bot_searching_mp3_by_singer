@@ -13,6 +13,7 @@ import time
 import functools
 import typing
 
+import inspect
 
 
 def get_user_os():
@@ -43,7 +44,7 @@ def clear_mp3_metadata(filepath):
     except Exception as ex:
         cmd_message_colorized(
             CMDColorLogger(), 
-            f'Clearing metadata:\n {ex}',
+            f'Clearing metadata: {ex}',
             config.RED
         )
 
@@ -56,7 +57,12 @@ def timeit(fn: typing.Callable) -> typing.Callable:
             return fn(*args, **kwargs)
         finally:
             dt += time.monotonic()
-            print("function %s tooks %.3fs", fn.__name__, dt)
+            
+            cmd_message_colorized(
+                CMDColorLogger(), 
+                f'Function "{fn.__name__}()" took {dt:.3f} seconds',
+                config.MAGENTA
+            )
 
     return timed
 
@@ -68,7 +74,7 @@ def download_file(url, filename, marker=False):
         
         cmd_message_colorized(
             CMDColorLogger(), 
-            f'Downloading of {filename} is finished',
+            f'\nDownloading of {filename} is finished',
             config.YELLOW
         )
         
@@ -78,9 +84,12 @@ def download_file(url, filename, marker=False):
     except Exception as ex:
         cmd_message_colorized(
             CMDColorLogger(), 
-            f'Clearing metadata:\n {ex}',
+            f'download_file(): {ex}',
             config.RED
         )
+
+        marker = False
+        return marker
 
 
 def delete_forbidden_chars(string):
@@ -91,8 +100,8 @@ def delete_forbidden_chars(string):
     return cleared_string
 
 
-def append_msg_id(lst, id):
-    lst.append(id)
+def append_msg_id(lst, id_):
+    if id_ not in lst:
+        lst.append(id_)
+    pass
 
-def clear_msg_ids(lst):
-    lst = []

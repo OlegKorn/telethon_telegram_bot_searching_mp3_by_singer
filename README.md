@@ -3,4 +3,7 @@
 After a song is chosen, it downloads it to my PC, deletes tags and send to the user
 
 ![alt text](https://i.ibb.co/WH8Dxfd/1.png)
+
+![alt text](https://i.ibb.co/mHmWk58/3.png) 
+
 ![alt text](https://i.ibb.co/2ddXdd5/2.png)

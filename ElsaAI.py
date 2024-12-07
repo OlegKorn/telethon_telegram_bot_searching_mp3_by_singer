@@ -1,228 +1,93 @@
-from telethon import TelegramClient, events
-
-from telethon.tl.custom import Button
-
-from telethon.errors.rpcerrorlist import FloodWaitError
-
-import logger
+from bs4 import BeautifulSoup as bs
+import requests
+import re, os, sys
+from time import sleep
+import shutil
+from fake_headers import Headers
+import config
 from logger import CMDColorLogger, cmd_message_colorized
 
-import asyncio
-import os, re, sys
-import config 
+import mutagen
 
-import muzfondsaver
-from muzfondsaver import MuzofondMusicSaver
+from config import THIS_SCRIPT_DIR
 
 import functions
 
 
-is_downloaded = False
-msg_ids = []
+SEARCH_BASE_URL = 'https://muzofond.fm/search/'
 
 
-def start_bot(start=True):
-    client = TelegramClient(
-        config.SESSION_NAME, 
-        config.API_ID, 
-        config.API_HASH
-    )
-    if start:
-        client.start(bot_token=config.PrincessElsaAIBot_BOT_TOKEN)
+class MuzofondMusicSaver(object):
+    '''singleton, i.e. only 1 instance can be created'''
+    def __init__(self, musician):
+        self.musician = str(musician)
+        self.search_url = SEARCH_BASE_URL + self.musician
 
-    return client
+    def __new__(cls, e): # without e it demands second argument
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(MuzofondMusicSaver, cls).__new__(cls)
+        return cls.instance
 
 
-
-def main():
-    try:
-        # if not session created
-        if not (f'{config.SESSION_NAME}.session' in os.listdir(f'{config.THIS_SCRIPT_DIR}')):
-            cmd_message_colorized(CMDColorLogger(), 'Session created...', config.RED)
-            bot_client = start_bot()
-            cmd_message_colorized(CMDColorLogger(), f'Bot started', config.RED)
+    def get_soup(self):
+        session = requests.Session()
         
-        if (f'{config.SESSION_NAME}.session' in os.listdir(f'{config.THIS_SCRIPT_DIR}')):
-            cmd_message_colorized(CMDColorLogger(), f'Bot started', config.YELLOW)
-            bot_client = start_bot(start=False)
+        try:
+            self.request = session.get(self.search_url, headers=Headers(headers=True).generate())
+            
+            if self.request.status_code != 200:
+                return 'Code != 200'
+
+            self.soup = bs(self.request.content, 'html.parser')
+            return self.soup
+        
+        except Exception as ex:
+            return False
+
+
+    def get_mp3s_of_author_found_songs(self):
+        self.s = self.get_soup()
+
+        if self.s:
+            mp3s_of_author = []
+
+            try:
+                page_items = self.s[1].find('ul', class_='mainSongs unstyled songs').find_all('li', class_='item')
+            except (TypeError, AttributeError):
+                try:
+                    page_items = self.s.find('ul', class_='mainSongs unstyled songsListen songs').find_all('li', class_='item')
+                except Exception:
+                    return 'No such author'
+
+            try:
+                for item in page_items:
+                    mp3_link = item.find("li", class_="play").get("data-url")
+                    mp3_title = item.find("span", class_="track").text.strip()
+                    mp3_title_cleared = functions.delete_forbidden_chars(mp3_title)
+
+                    track_data = mp3_link + ":::" + mp3_title_cleared
+                    mp3s_of_author.append(track_data)
+
+                return mp3s_of_author
+
+            except Exception:
+                return 'Error finding links of songs'
+
+
+    def clear_mp3_metadata(self, filepath):
+        try:
+            mp3 = mutagen.File(filepath)
+
+            mp3.delete()
+            mp3.save()
+
+        except Exception as ex:
+            cmd_message_colorized(
+                CMDColorLogger(), 
+                f'Clearing metadata:\n {ex}',
+                config.RED
+            )
+                
             
 
-            @bot_client.on(events.NewMessage(incoming=True))
-            async def handle_any_senseless_message(event):
-                try:
-                    functions.append_msg_id(msg_ids, event.id)
-
-                    if (event.text != '/start') and (event.text != '/delete'):
-                        user = await event.get_sender()
-                        msg = await event.respond(
-                            f'Hello, ☘️ {user.first_name} ☘️! Please [/start](/start)'
-                        )                       
-                        functions.append_msg_id(msg_ids, msg.id)
-                
-                except Exception as ex:
-                    cmd_message_colorized(CMDColorLogger(), f'Exception: handle_any_senseless_message: {ex}',config.RED)
-
-
-            @bot_client.on(events.NewMessage(pattern='/delete'))
-            async def delete_dialog(event):
-                functions.append_msg_id(msg_ids, event.id)
-
-                cmd_message_colorized(CMDColorLogger(), msg_ids, config.YELLOW)
-                msg = await bot_client.delete_messages(event.chat_id, msg_ids)
-                cmd_message_colorized(CMDColorLogger(), str(msg), config.YELLOW)
-                
-                functions.clear_msg_ids(msg_ids)
-
-
-            @bot_client.on(events.NewMessage(pattern='/start'))
-            async def respond_start(event):
-                try:
-                    functions.append_msg_id(msg_ids, event.id)
-
-                    user = await event.get_sender()
-                    msg = await event.respond(
-                        f'Hello, ☘️ {user.first_name} ☘️!\nThis bot will send 🎁 you a chosen song ' \
-                        '(mp3 file) from a songs list of an artist you chose ' \
-                        '🔊 (from muzofond.fm)', 
-                        buttons=[ 
-                            Button.inline('Click and send a music artist name...')
-                        ]
-                    )
-                    functions.append_msg_id(msg_ids, msg.id)
-                
-                except Exception as ex:
-                    cmd_message_colorized(CMDColorLogger(), f'Exception: respond_start: {ex}',config.RED)
-
-
-            @bot_client.on(events.CallbackQuery(data=b'Click and send a music artist name...'))
-            async def handler_click(event):
-                msg = await event.respond(f'Type the name of a musician. After that the bot will send the list of tracks of the chosen musician...' )
-                functions.append_msg_id(msg_ids, msg.id)
-
-                @bot_client.on(events.NewMessage(incoming=True))                 
-                async def handler_chose_name(event):
-                    if event.text == '/delete':
-                        functions.append_msg_id(msg_ids, event.id)
-                        await bot_client.delete_messages(event.chat_id, msg_ids)
-                        clear_msg_ids()
-
-                    if event.text != '/start': 
-                        event.text = event.text.strip()
-                        artist = str(event.text).title()
-
-                        if not any(x.isalpha() for x in artist):
-                            msg = await event.respond('Your musician\'s name didn\'t have any letters! Is it a joke? Try again with a real name...')
-                            functions.append_msg_id(msg_ids, msg.id)
-
-                        else:
-                            cmd_message_colorized(CMDColorLogger(), f'You chose {artist}', config.YELLOW)
-                                
-                            mfs = MuzofondMusicSaver(artist)
-                            songs = mfs.get_mp3s_of_author_found_songs()
-                                
-                            for song in songs:
-                                mp3_title = song.split(":::")[1]
-                                mp3_link = song.split(":::")[0]
-
-                                msg = await event.respond(
-                                    f'{artist}, [link]({mp3_link}); len of ids: {len(msg_ids)}',
-                                    buttons=[
-                                        Button.inline(
-                                            f'🏆 {artist}: {mp3_title} 🐈',
-                                            data=b'mp3'
-                                        )
-                                    ]
-                                )
-                                functions.append_msg_id(msg_ids, msg.id)
-
-                            return
-
-
-            @bot_client.on(events.CallbackQuery(data=b'mp3'))
-            async def handler_download(event):
-                functions.append_msg_id(msg_ids, event.id)
-
-                msg = await event.get_message()
-                chat = await event.get_input_chat() # bot chat
-                user = await event.get_sender()
-                
-                try:
-                    song_title = str(msg.reply_markup.rows[0].buttons[0].text).split(': ')[1] # f'{artist}: {mp3_title}',
-                    artist = str(msg.reply_markup.rows[0].buttons[0].text).split(': ')[0] # f'{artist}: {mp3_title}',
-                    song_url = str(msg.entities[0].url)
-
-                    # download a song 
-                    try:
-                        filename = f'{artist} - {song_title}'
-                        
-                        msg = await event.respond(f'👺 {user.first_name}, 🐥 please wait a little... 🌈\n {filename} is being downloaded ⚙️ ...')
-                        msg_ids.append(msg.id)
-
-                        cmd_message_colorized(CMDColorLogger(), f'⚙️ Trying to download: {filename}.mp3...', config.LIGHT_GREEN)
-                        
-                        is_downloaded = functions.download_file(song_url, f'{config.THIS_SCRIPT_DIR}/sent_songs/{filename}.mp3')
-                        
-                        if is_downloaded:
-                            mfs = MuzofondMusicSaver(artist)
-                            mfs.clear_mp3_metadata(f'{config.THIS_SCRIPT_DIR}/sent_songs/{filename}.mp3')
-
-                            cmd_message_colorized(CMDColorLogger(), f'The tags are deleted from {filename}.mp3...', config.LIGHT_GREEN)
-                            
-                            # SENDING THE CHOSEN FILE CLEARD FROM METADATA
-                            # TO THE USER
-                            msg = await event.respond(f'{user.first_name}, please wait a little... It\'s being processed 🕐')
-                            functions.append_msg_id(msg_ids, msg.id)
-                            await asyncio.sleep(4)
-                            
-                            msg = await event.respond(f'{user.first_name}, Still being processed... 🕑')
-                            functions.append_msg_id(msg_ids, msg.id)
-                            await asyncio.sleep(4)
-                            
-                            msg = await event.respond(f'{user.first_name}, Don\'t panic, if you see this message - it\'s still being processed... 🕒')
-                            functions.append_msg_id(msg_ids, msg.id)
-                            await asyncio.sleep(4)
-                            
-                            msg = await event.respond(f'{user.first_name}, Just 10-15 seconds... It\'s being processed 🕓')
-                            functions.append_msg_id(msg_ids, msg.id)
-                            await asyncio.sleep(4)
-                            
-                            msg = await event.respond(f'{user.first_name}, A little patience... It\'s STILL being processed 🕔')
-                            functions.append_msg_id(msg_ids, msg.id)
-                            await asyncio.sleep(4)
-                            
-                            msg = await event.respond(f'{user.first_name}, Yes! It\'s STILL being processed 🕕')
-                            functions.append_msg_id(msg_ids, msg.id)
-
-                            # sending file
-                            file = await bot_client.upload_file(f'{config.THIS_SCRIPT_DIR}/sent_songs/{filename}.mp3')
-                            
-                            await bot_client.send_file(chat, file)
-
-                            msg = await bot_client.send_message(
-                                chat, 
-                                f'🐥 Hey, {user.first_name}!\nHere\'s your song: {filename}'
-                            )
-                            functions.append_msg_id(msg_ids, msg.id)
-
-                            cmd_message_colorized(
-                                CMDColorLogger(), 
-                                f'The song {filename}.mp3 is sent.',
-                                config.LIGHT_GREEN
-                            )
-                      
-                    except Exception as ex:
-                        cmd_message_colorized(CMDColorLogger(), f'Exception: download_file or clear_mp3_metadata: {ex}',config.RED)
-
-                except Exception as ex:
-                    cmd_message_colorized(CMDColorLogger(), f'Exception @bot_client.on(events.CallbackQuery(data=b\'mp3\')): {ex}', config.RED)
-                
-            with bot_client:
-                bot_client.run_until_disconnected()
-
-    except Exception as ex:
-        cmd_message_colorized(CMDColorLogger(), f'Exception: {ex}', config.RED)
-
-        
-
-if __name__ == '__main__':
-    main()
+# clear_mp3_metadata('G:/Desktop/py/TG/PrincessElsaAIBot/sent_songs/Holly Dunn - Wings on My Angel.mp3')

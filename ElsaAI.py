@@ -54,7 +54,7 @@ def main():
                 @client.on(events.NewMessage(pattern='/start'))
                 async def respond_start(event):
                     functions.append_msg_id(msg_ids, event.id)
-                    cmd_message_colorized(CMDColorLogger(), f'/start: {msg_ids}', config.LIGHT_GREEN)
+                    # cmd_message_colorized(CMDColorLogger(), f'/start: {msg_ids}', config.LIGHT_GREEN)
 
                     if config.send_name_button_event_was_triggered and not config.send_name_button_event_was_finished:    
                         pass
@@ -82,12 +82,12 @@ def main():
                 @client.on(events.NewMessage(incoming=True, pattern='/delete'))
                 async def delete_dialog(event):
                     functions.append_msg_id(msg_ids, event.id)
-                    cmd_message_colorized(CMDColorLogger(), f'/delete: {msg_ids}', config.LIGHT_GREEN)
+                    # cmd_message_colorized(CMDColorLogger(), f'/delete: {msg_ids}', config.LIGHT_GREEN)
                     
                     try:
                         await client.delete_messages(event.chat_id, msg_ids)
-                        # msg_ids.clear()
-                        cmd_message_colorized(CMDColorLogger(), f'AFTER DELETING? /delete: {msg_ids}', config.LIGHT_GREEN)
+                        msg_ids.clear()
+                        # cmd_message_colorized(CMDColorLogger(), f'AFTER DELETING? /delete: {msg_ids}', config.LIGHT_GREEN)
                     except Exception as ex:
                         cmd_message_colorized(CMDColorLogger(), f'Exception: delete_messages: {ex}',config.RED)
                                             
@@ -100,7 +100,7 @@ def main():
                 @client.on(events.NewMessage(pattern=r'^((?!\/start|\/delete).)*$'))
                 async def respond_else(event):
                     functions.append_msg_id(msg_ids, event.id)
-                    cmd_message_colorized(CMDColorLogger(), f'/start|/delete: {msg_ids}', config.LIGHT_GREEN)
+                    # cmd_message_colorized(CMDColorLogger(), f'/start|/delete: {msg_ids}', config.LIGHT_GREEN)
 
                     if config.send_name_button_event_was_triggered and not config.send_name_button_event_was_finished:
                         pass
@@ -110,7 +110,7 @@ def main():
                         msg = await event.respond('Try [/start](/start)...')                       
                         
                         functions.append_msg_id(msg_ids, msg.id)
-                        cmd_message_colorized(CMDColorLogger(), f'/start|/delete): {msg_ids}', config.LIGHT_GREEN)
+                        # cmd_message_colorized(CMDColorLogger(), f'/start|/delete): {msg_ids}', config.LIGHT_GREEN)
                         
             except Exception as ex:
                 cmd_message_colorized(CMDColorLogger(), f'Exception: respond_else: {ex}', config.RED)
@@ -121,7 +121,7 @@ def main():
             ##############################################################################
             @client.on(events.CallbackQuery(data=b'send_name_button'))
             async def handler_send_name_button(event):
-                cmd_message_colorized(CMDColorLogger(), f'send_name_button: {msg_ids}', config.LIGHT_GREEN)
+                # cmd_message_colorized(CMDColorLogger(), f'send_name_button: {msg_ids}', config.LIGHT_GREEN)
 
                 config.send_name_button_event_was_triggered = True
                     
@@ -129,21 +129,25 @@ def main():
                                           ' send the list of tracks of the chosen musician...' )
 
                 functions.append_msg_id(msg_ids, msg.id)
-                cmd_message_colorized(CMDColorLogger(), f'send_name_button: {msg_ids}', config.LIGHT_GREEN)
+                # cmd_message_colorized(CMDColorLogger(), f'send_name_button: {msg_ids}', config.LIGHT_GREEN)
                
                 @client.on(events.NewMessage)
                 async def handler_a_name_is_chosen_after_clicking_send_name_button(event):
                     functions.append_msg_id(msg_ids, event.id)
-                    cmd_message_colorized(CMDColorLogger(), f'handler_a_name_is_chosen_after_clicking_send_name_button: {msg_ids}', config.LIGHT_GREEN)
+                    # cmd_message_colorized(CMDColorLogger(), f'handler_a_name_is_chosen_after_clicking_send_name_button: {msg_ids}', config.LIGHT_GREEN)
 
                     try:
+                        if event.text == '/delete':
+                            config.send_name_button_event_was_triggered = False
+                            
                         if config.send_name_button_event_was_triggered:
                             artist = str(event.text).strip().title()
-                                          
+                            await event.respond(f'{artist}')
+                            '''             
                             if not any(x.isalpha() for x in artist):
                                 msg = await event.respond('Your musician\'s name didn\'t have any letters! Is it a joke? Try again with a real name...')
                                 functions.append_msg_id(msg_ids, msg.id)
-                                cmd_message_colorized(CMDColorLogger(), f'handler_a_name_is_chosen_after_clicking_send_name_button: {msg_ids}', config.LIGHT_GREEN)
+                                # cmd_message_colorized(CMDColorLogger(), f'handler_a_name_is_chosen_after_clicking_send_name_button: {msg_ids}', config.LIGHT_GREEN)
 
                             # elif (event.text != '/delete') and (event.text != '/start'):
                             cmd_message_colorized(CMDColorLogger(), f'You chose {artist}', config.YELLOW)
@@ -155,11 +159,11 @@ def main():
                                 msg = await event.respond(f'🐖 Maybe there is no such author: *{artist}* on this site... 🆘. Try [/start](/start)')
                                 functions.append_msg_id(msg_ids, msg.id)
                                 
-                                cmd_message_colorized(
-                                    CMDColorLogger(), 
-                                    f'handler_a_name_is_chosen_after_clicking_send_name_button: {event.id} {msg.id}', 
-                                    config.RED
-                                )
+                                # cmd_message_colorized(
+                                #     CMDColorLogger(), 
+                                #     f'handler_a_name_is_chosen_after_clicking_send_name_button: {event.id} {msg.id}', 
+                                #     config.RED
+                                # )
                                 
                             else:
                                 for song in songs:
@@ -177,12 +181,13 @@ def main():
                                     )
 
                                     functions.append_msg_id(msg_ids, msg.id)
-                                    cmd_message_colorized(CMDColorLogger(), f'handler_a_name_is_chosen_after_clicking_send_name_button: {msg_ids}', config.LIGHT_GREEN)
+                                    # cmd_message_colorized(CMDColorLogger(), f'handler_a_name_is_chosen_after_clicking_send_name_button: {msg_ids}', config.LIGHT_GREEN)
 
                             del mfs, songs
+                            '''
 
-                        config.send_name_button_event_was_triggered = False
-                        config.send_name_button_event_was_finished = True
+                        # config.send_name_button_event_was_triggered = False
+                        # config.send_name_button_event_was_finished = True
 
                     except Exception as ex:
                         cmd_message_colorized(
@@ -191,6 +196,8 @@ def main():
                             config.RED
                         )
 
+                    config.send_name_button_event_was_triggered = False
+            '''
             @client.on(events.CallbackQuery(data=b'download mp3'))
             async def handler_download(event):
                 button_info = await event.get_message()
@@ -274,6 +281,7 @@ def main():
                 except Exception as ex:
                     cmd_message_colorized(CMDColorLogger(), f'Exception @client.on(events.CallbackQuery(data=b\'mp3\')): {ex}', config.RED)
 
+            '''
 
             with client:
                 client.run_until_disconnected()

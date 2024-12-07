@@ -36,51 +36,42 @@ class MuzofondMusicSaver(object):
             self.request = session.get(self.search_url, headers=Headers(headers=True).generate())
             
             if self.request.status_code != 200:
-                return f'Maybe the page {self.search_url} isn\'t available, status_code: {self.request.status_code}'
+                return 'Code != 200'
 
             self.soup = bs(self.request.content, 'html.parser')
             return self.soup
         
         except Exception as ex:
-            return f'Exception: {ex}'
-
-        except ConnectionError as ce:
-            return f'ConnectionError: {ce}'
-
-        except RequestException as re:
-            return f'RequestException: {re}'
-
-        except ConnectTimeout as ct:
-            return f'ConnectionError: {ct}'
-
-        except Timeout as t:
-            return f'Timeout: {t}'
+            return False
 
 
     def get_mp3s_of_author_found_songs(self):
         self.s = self.get_soup()
-        mp3s_of_author = []
 
-        try:
-            page_items = self.s.find('ul', class_='mainSongs unstyled songs').find_all('li', class_='item')
-        except (TypeError, AttributeError) as ex:
-            print(ex)
-            page_items = self.s.find('ul', class_='mainSongs unstyled songsListen songs').find_all('li', class_='item')
+        if self.s:
+            mp3s_of_author = []
 
-        try:
-            for item in page_items:
-                mp3_link = item.find("li", class_="play").get("data-url")
-                mp3_title = item.find("span", class_="track").text.strip()
-                mp3_title_cleared = functions.delete_forbidden_chars(mp3_title)
+            try:
+                page_items = self.s[1].find('ul', class_='mainSongs unstyled songs').find_all('li', class_='item')
+            except (TypeError, AttributeError):
+                try:
+                    page_items = self.s.find('ul', class_='mainSongs unstyled songsListen songs').find_all('li', class_='item')
+                except Exception:
+                    return 'No such author'
 
-                track_data = mp3_link + ":::" + mp3_title_cleared
-                mp3s_of_author.append(track_data)
+            try:
+                for item in page_items:
+                    mp3_link = item.find("li", class_="play").get("data-url")
+                    mp3_title = item.find("span", class_="track").text.strip()
+                    mp3_title_cleared = functions.delete_forbidden_chars(mp3_title)
 
-            return mp3s_of_author
+                    track_data = mp3_link + ":::" + mp3_title_cleared
+                    mp3s_of_author.append(track_data)
 
-        except Exception as ex:
-            print(f'Error: get_mp3s_of_author_page()\n, {ex}')
-            return ex
+                return mp3s_of_author
+
+            except Exception:
+                return 'Error finding links of songs'
 
 
     def clear_mp3_metadata(self, filepath):

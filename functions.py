@@ -68,7 +68,7 @@ def timeit(fn: typing.Callable) -> typing.Callable:
 
 
 @timeit
-def download_file(url, filename, marker=False):
+def download_file(url, filename, bar=wget.bar_thermometer, marker=False):
     try:
         wget.download(url, filename)
         
@@ -89,7 +89,7 @@ def download_file(url, filename, marker=False):
         )
 
         marker = False
-        return marker
+        return [marker, ex]
 
 
 def delete_forbidden_chars(string):
@@ -104,4 +104,3 @@ def append_msg_id(lst, id_):
     if id_ not in lst:
         lst.append(id_)
     pass
-

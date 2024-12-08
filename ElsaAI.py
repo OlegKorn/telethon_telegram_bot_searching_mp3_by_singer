@@ -141,9 +141,8 @@ def main():
                             config.send_name_button_event_was_triggered = False
                             
                         if config.send_name_button_event_was_triggered:
-                            artist = str(event.text).strip().title()
-                            await event.respond(f'{artist}')
-                            '''             
+                            artist = str(event.text).strip().lower()
+           
                             if not any(x.isalpha() for x in artist):
                                 msg = await event.respond('Your musician\'s name didn\'t have any letters! Is it a joke? Try again with a real name...')
                                 functions.append_msg_id(msg_ids, msg.id)
@@ -155,8 +154,8 @@ def main():
                             mfs = MuzofondMusicSaver(artist)
                             songs = mfs.get_mp3s_of_author_found_songs()
                                 
-                            if (not songs) or (songs == 'No such author') or (songs == 'Error finding links of songs'):
-                                msg = await event.respond(f'🐖 Maybe there is no such author: *{artist}* on this site... 🆘. Try [/start](/start)')
+                            if 'Error:' in songs[0]:
+                                msg = await event.respond(f'🐖 Error: 🐖{songs[1]🐖} 🐖.\nTry [/start](/start) or wait a little...')
                                 functions.append_msg_id(msg_ids, msg.id)
                                 
                                 # cmd_message_colorized(
@@ -184,8 +183,7 @@ def main():
                                     # cmd_message_colorized(CMDColorLogger(), f'handler_a_name_is_chosen_after_clicking_send_name_button: {msg_ids}', config.LIGHT_GREEN)
 
                             del mfs, songs
-                            '''
-
+                    
                         # config.send_name_button_event_was_triggered = False
                         # config.send_name_button_event_was_finished = True
 
@@ -197,7 +195,7 @@ def main():
                         )
 
                     config.send_name_button_event_was_triggered = False
-            '''
+            
             @client.on(events.CallbackQuery(data=b'download mp3'))
             async def handler_download(event):
                 button_info = await event.get_message()
@@ -261,7 +259,8 @@ def main():
                             # sending file
                             file = await client.upload_file(f'{config.THIS_SCRIPT_DIR}/sent_songs/{filename}.mp3')
                             
-                            await client.send_file(chat, file)
+                            msg_file = await client.send_file(chat, file)
+                            functions.append_msg_id(msg_ids, msg.id)
 
                             msg = await client.send_message(
                                 chat, 
@@ -281,11 +280,8 @@ def main():
                 except Exception as ex:
                     cmd_message_colorized(CMDColorLogger(), f'Exception @client.on(events.CallbackQuery(data=b\'mp3\')): {ex}', config.RED)
 
-            '''
-
             with client:
                 client.run_until_disconnected()
-
 
     except Exception as ex:
         cmd_message_colorized(CMDColorLogger(), f'Exception: {ex}', config.RED)

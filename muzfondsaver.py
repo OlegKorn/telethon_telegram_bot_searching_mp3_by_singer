@@ -14,7 +14,7 @@ from config import THIS_SCRIPT_DIR
 import functions
 
 
-SEARCH_BASE_URL = 'https://muzofond.fm/search/'
+SEARCH_BASE_URL = 'https://muzofond.fm/collections/artists/' # 'https://muzofond.fm/search/'
 
 
 class MuzofondMusicSaver(object):
@@ -48,16 +48,17 @@ class MuzofondMusicSaver(object):
     def get_mp3s_of_author_found_songs(self):
         self.s = self.get_soup()
 
-        if self.s:
+        if not self.s:
+            return False 
+        
+        if self.s != 'Code != 200':
             mp3s_of_author = []
-
+            
             try:
-                page_items = self.s[1].find('ul', class_='mainSongs unstyled songs').find_all('li', class_='item')
-            except (TypeError, AttributeError):
-                try:
-                    page_items = self.s.find('ul', class_='mainSongs unstyled songsListen songs').find_all('li', class_='item')
-                except Exception:
-                    return 'No such author'
+                data_url_link = SEARCH_BASE_URL + self.musician
+                page_items = self.s.find('ul', attrs ={"data-url": f"{data_url_link}"}).find_all('li', class_='item')
+            except (TypeError, AttributeError) as ex:
+                return ['Error: no such author', ex]
 
             try:
                 for item in page_items:
@@ -70,8 +71,8 @@ class MuzofondMusicSaver(object):
 
                 return mp3s_of_author
 
-            except Exception:
-                return 'Error finding links of songs'
+            except Exception as ex:
+                return ['Error: finding links of songs', ex]
 
 
     def clear_mp3_metadata(self, filepath):
@@ -88,6 +89,4 @@ class MuzofondMusicSaver(object):
                 config.RED
             )
                 
-            
-
-# clear_mp3_metadata('G:/Desktop/py/TG/PrincessElsaAIBot/sent_songs/Holly Dunn - Wings on My Angel.mp3')
+    

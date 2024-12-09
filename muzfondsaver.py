@@ -14,14 +14,12 @@ from config import THIS_SCRIPT_DIR
 import functions
 
 
-SEARCH_BASE_URL = 'https://muzofond.fm/collections/artists/' # 'https://muzofond.fm/search/'
-
 
 class MuzofondMusicSaver(object):
     '''singleton, i.e. only 1 instance can be created'''
     def __init__(self, musician):
-        self.musician = str(musician)
-        self.search_url = SEARCH_BASE_URL + self.musician
+        self.musician = str(musician).strip()
+        self.search_url = f'https://muzofond.fm/collections/artists/{musician}'
 
     def __new__(cls, e): # without e it demands second argument
         if not hasattr(cls, 'instance'):
@@ -35,8 +33,8 @@ class MuzofondMusicSaver(object):
         try:
             self.request = session.get(self.search_url, headers=Headers(headers=True).generate())
             
-            if self.request.status_code != 200:
-                return 'Code != 200'
+            if self.request.status_code >= 400:
+                return 'Request status code is >= 400'
 
             self.soup = bs(self.request.content, 'html.parser')
             return self.soup
@@ -51,12 +49,11 @@ class MuzofondMusicSaver(object):
         if not self.s:
             return False 
         
-        if self.s != 'Code != 200':
+        if self.s != 'Request status code is >= 400':
             mp3s_of_author = []
             
             try:
-                data_url_link = SEARCH_BASE_URL + self.musician
-                page_items = self.s.find('ul', attrs ={"data-url": f"{data_url_link}"}).find_all('li', class_='item')
+                page_items = self.s.find('ul', attrs ={"data-url": f"{self.search_url}"}).find_all('li', class_='item')
             except (TypeError, AttributeError) as ex:
                 return ['Error: no such author', ex]
 

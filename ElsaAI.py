@@ -155,7 +155,7 @@ def main():
                             songs = mfs.get_mp3s_of_author_found_songs()
                                 
                             if 'Error:' in songs[0]:
-                                msg = await event.respond(f'🐖 Error: 🐖{songs[1]🐖} 🐖.\nTry [/start](/start) or wait a little...')
+                                msg = await event.respond(f'🐖 Error: 🐖{songs[1]} 🐖.\nTry [/start](/start) or wait a little...')
                                 functions.append_msg_id(msg_ids, msg.id)
                                 
                                 # cmd_message_colorized(

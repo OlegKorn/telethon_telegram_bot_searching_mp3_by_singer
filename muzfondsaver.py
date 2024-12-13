@@ -13,6 +13,7 @@ from config import THIS_SCRIPT_DIR
 
 import functions
 
+from multiprocessing import Pool
 
 
 class MuzofondMusicSaver(object):
@@ -27,6 +28,7 @@ class MuzofondMusicSaver(object):
         return cls.instance
 
 
+    @functions.timeit
     def get_soup(self):
         session = requests.Session()
         
@@ -35,7 +37,7 @@ class MuzofondMusicSaver(object):
             
             if self.request.status_code >= 400:
                 return 'Request status code is >= 400'
-
+            
             self.soup = bs(self.request.content, 'html.parser')
             return self.soup
         
@@ -43,6 +45,7 @@ class MuzofondMusicSaver(object):
             return False
 
 
+    @functions.timeit
     def get_mp3s_of_author_found_songs(self):
         self.s = self.get_soup()
 
@@ -72,6 +75,7 @@ class MuzofondMusicSaver(object):
                 return ['Error: finding links of songs', ex]
 
 
+    @functions.timeit
     def clear_mp3_metadata(self, filepath):
         try:
             mp3 = mutagen.File(filepath)

@@ -13,7 +13,7 @@ CYAN = 'cyan'
 API_ID = 
 API_HASH = ''
 
-PrincessElsaAIBot_BOT_TOKEN = ':'
+BOT_TOKEN = ':'
 PHONE = '+'
 
 BOT_NAME = ''

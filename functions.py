@@ -24,7 +24,7 @@ import logging
 import string
 import random
 
-
+# author github /s3rgeym
 def timeit(fn: typing.Callable) -> typing.Callable:
     @functools.wraps(fn)
     def timed(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:

@@ -1,6 +1,8 @@
 import platform
 from string import punctuation
 
+from telethon import TelegramClient
+
 from logger import CMDColorLogger, cmd_message_colorized
 import config
 import mutagen
@@ -17,6 +19,10 @@ import typing
 import inspect
 
 import tempfile 
+
+import logging
+import string
+import random
 
 
 def timeit(fn: typing.Callable) -> typing.Callable:
@@ -35,10 +41,6 @@ def timeit(fn: typing.Callable) -> typing.Callable:
             )
 
     return timed
-
-
-def get_user_os():
-    return platform.system().lower()
 
 
 def delete_forbidden_chars(string):
@@ -71,7 +73,7 @@ def clear_mp3_metadata(filepath):
 
 
 @timeit
-def download_file(url, filename, bar=wget.bar_thermometer, marker=False):
+def download_file(url, filename, marker=False):
     try:
         wget.download(url, filename)
         
@@ -93,7 +95,7 @@ def download_file(url, filename, bar=wget.bar_thermometer, marker=False):
 
         marker = False
         return [marker, ex]
-        
+
 
 @timeit
 def return_chosen_mp3_requested_content(url):
@@ -105,3 +107,16 @@ def append_msg_id(lst, id_):
     if id_ not in lst:
         lst.append(id_)
     pass
+
+
+def remove_emoji(string):
+    emoji_pattern = re.compile("["
+                           u"\U0001F600-\U0001F64F"  # emoticons
+                           u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                           u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                           u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                           u"\U00002702-\U000027B0"
+                           u"\U000024C2-\U0001F251"
+                           "]+", flags=re.UNICODE)
+
+    return emoji_pattern.sub(r'', string)
